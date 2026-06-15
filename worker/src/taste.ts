@@ -1,8 +1,10 @@
 // Client for tastenutrition.com. Speaks the legacy ASP site's language
-// (session cookie + form POSTs) and hands back raw HTML for parse.ts.
+// (session cookie + form POSTs) and hands back raw HTML for shared/parse.js.
 // Endpoint contract: ../../m0/FINDINGS.md.
 
-import { parseCalendar, parseStudents, looksLoggedIn, type Calendar, type Student } from './parse.ts';
+import { parseCalendar, parseStudents, looksLoggedIn } from '../../shared/parse.js';
+type Student = import('../../shared/parse.js').Student;
+type Calendar = import('../../shared/parse.js').Calendar;
 
 const BASE = 'https://www.tastenutrition.com';
 
@@ -105,5 +107,5 @@ export async function getCalendar(
   if (res.status === 302) {
     throw new TasteError('Taste session expired. Please log in again.', 401);
   }
-  return parseCalendar(await res.text());
+  return parseCalendar(await res.text()) as Calendar;
 }

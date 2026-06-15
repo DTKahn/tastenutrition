@@ -13,5 +13,8 @@ node_modules/
 # Local Claude permissions (machine-specific)
 .claude/settings.local.json
 
+# Local MCP server config — machine-specific absolute paths (see extension/README.md)
+.mcp.json
+
 # Screenshots / images in m0 may show student PII
 m0/*.png

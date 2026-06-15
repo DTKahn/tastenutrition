@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Taste+ school lunch ordering",
+  "version": "0.1.0",
+  "description": "A nicer ordering UI layered on tastenutrition.com (personal use).",
+  "content_scripts": [
+    {
+      "matches": ["https://www.tastenutrition.com/school_menu.asp*"],
+      "js": ["src/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["shared/parse.js", "shared/order.js", "src/ui.js", "src/checkout.js", "src/styles.css"],
+      "matches": ["https://www.tastenutrition.com/*"]
+    }
+  ]
+}
