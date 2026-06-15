@@ -7,7 +7,8 @@
  * @typedef {{ id: string, name: string, school: string }} Student
  * @typedef {{ id: string, name: string, description: string, vegetarian: boolean }} MenuOption
  * @typedef {{ date: string, menuId: string, status: 'ordered'|'available',
- *   orderedOptionId: string|null, hasChangeOrder: boolean, options: MenuOption[] }} CalendarDay
+ *   orderedOptionId: string|null, hasChangeOrder: boolean, orderable: boolean,
+ *   options: MenuOption[] }} CalendarDay
  * @typedef {{ studentName: string|null, days: CalendarDay[] }} Calendar
  */
 
@@ -131,6 +132,11 @@ export function parseCalendar(html) {
       status: orderedOptionId ? 'ordered' : 'available',
       orderedOptionId,
       hasChangeOrder: /Change Order/i.test(cell),
+      // Taste renders only days still within the order window (past-cutoff days
+      // are omitted; a closed day renders without options). So a new order is
+      // possible iff the day is available and has at least one option. Taste's
+      // checkout is the final cutoff authority.
+      orderable: !orderedOptionId && options.length > 0,
       options,
     });
   }

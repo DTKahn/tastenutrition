@@ -88,6 +88,18 @@ if (menu) {
       assert.equal(d.hasChangeOrder, true);
     }
   });
+  check('orderable flag: available days with options are orderable; ordered days are not', () => {
+    const open = cal.days.find((x) => x.date === '2026-06-24');
+    assert.ok(open, '6/24 present');
+    assert.equal(open.orderable, true);
+    for (const d of cal.days.filter((x) => x.status === 'ordered')) {
+      assert.equal(d.orderable, false, `ordered day ${d.date} is not orderable`);
+    }
+    // any available day with zero options is not orderable
+    for (const d of cal.days.filter((x) => x.status === 'available' && x.options.length === 0)) {
+      assert.equal(d.orderable, false, `optionless day ${d.date} is not orderable`);
+    }
+  });
 }
 
 if (passed === 0) {

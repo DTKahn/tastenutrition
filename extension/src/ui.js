@@ -59,7 +59,7 @@ function render(shadow, calendar, onSubmit) {
   shadow.appendChild(panel);
 
   // --- available days ---
-  const available = calendar.days.filter((d) => d.status === 'available' && d.options.length);
+  const available = calendar.days.filter((d) => d.orderable);
   if (!available.length) {
     const msg = document.createElement('p');
     msg.className = 'muted';
