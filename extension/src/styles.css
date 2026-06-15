@@ -1,0 +1,18 @@
+:host, * { box-sizing: border-box; }
+#panel {
+  position: fixed; top: 0; right: 0; width: 380px; height: 100vh;
+  background: #fff; border-left: 1px solid #cbd2d9; box-shadow: -8px 0 24px rgba(0,0,0,.12);
+  font: 14px/1.4 -apple-system, Segoe UI, Roboto, sans-serif; color: #1f2933;
+  display: flex; flex-direction: column; z-index: 2147483647;
+}
+#panel header { padding: 14px 16px; border-bottom: 1px solid #e4e7eb; font-weight: 600; }
+#days { overflow: auto; padding: 8px 16px; flex: 1; }
+.day { border-bottom: 1px solid #f0f2f5; padding: 10px 0; }
+.day h4 { margin: 0 0 6px; font-size: 13px; color: #486581; }
+.opt { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+.opt .veg { font-size: 10px; color: #0a7d35; border: 1px solid #0a7d35; border-radius: 3px; padding: 0 3px; }
+footer { border-top: 1px solid #e4e7eb; padding: 14px 16px; }
+#total { font-weight: 600; margin-bottom: 10px; }
+#continue { width: 100%; padding: 10px; background: #2f855a; color: #fff; border: 0; border-radius: 6px; font-size: 15px; cursor: pointer; }
+#continue:disabled { background: #b8c2cc; cursor: default; }
+.muted { color: #7b8794; }
