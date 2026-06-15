@@ -11,6 +11,8 @@
 
   const { parseCalendar } = await import(chrome.runtime.getURL('shared/parse.js'));
   const { mountUI } = await import(chrome.runtime.getURL('src/ui.js'));
+  const { assembleOrderFields } = await import(chrome.runtime.getURL('shared/order.js'));
+  const { applyAndCheckout } = await import(chrome.runtime.getURL('src/checkout.js'));
 
   const raw = await fetch('/school_menu.asp', {
     method: 'POST',
@@ -25,8 +27,10 @@
   mountUI({
     calendar,
     onSubmit: (selections) => {
-      // Task 5 replaces this with the real apply + handoff.
-      console.log('[taste+] selections', selections);
+      const writes = assembleOrderFields(calendar, selections); // throws if any day is already ordered
+      const n = selections.length;
+      if (!confirm(`Continue to Taste's payment page for ${n} new lunch order${n === 1 ? '' : 's'}?`)) return;
+      applyAndCheckout(writes);
     },
   });
 })();
