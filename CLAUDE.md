@@ -28,14 +28,25 @@ scraping) and exposes clean JSON.
 - Multi-tenant-ready (per-user logins); P1 is just me + partner.
 
 ## Code map
-- `worker/src/parse.ts` — HTML → JSON (students, calendar w/ current orders,
-  per-day options). The fiddly part; quirks documented inline. **Tested** by
-  `worker/test/parse.test.ts` against `m0/` fixtures: `npm run test:parse`.
-- `worker/src/taste.ts` — Taste client (login, students, calendar).
+- `shared/parse.js` — HTML → JSON (students, calendar w/ current orders, per-day
+  options, `orderable` flag). The fiddly part; quirks documented inline. **Single
+  source** imported by both `worker/` and `extension/`. Tested by
+  `shared/parse.test.js` against `m0/` fixtures: `npm run test:parse` (from worker)
+  or `node shared/parse.test.js`.
+- `shared/order.js` — `assembleOrderFields(calendar, selections)`: pure logic that
+  turns new-order picks into Taste `frm` field writes; new-orders-only (throws on
+  already-ordered days). Tested by `shared/order.test.js`.
+- `worker/src/taste.ts` — Taste client (login, students, calendar). Imports the
+  parser from `../../shared/parse.js`.
 - `worker/src/index.ts` — routes: `POST /api/auth/login`, `GET /api/students`,
   `GET /api/calendar?student=`.
-- `web/{index.html,app.js,styles.css,config.js}` — UI. `config.js` sets the API
-  base URL.
+- `web/{index.html,app.js,styles.css,config.js}` — read-only viewer UI (phone +
+  laptop). `config.js` sets the API base URL.
+- `extension/` — laptop Chrome MV3 extension (M2 ordering). `src/content.js`
+  (bootstrap: fetch raw menu → parse → mount), `src/ui.js` (shadow-DOM picker),
+  `src/checkout.js` (clear stale `_days_choices`, write picks, top-level submit to
+  Taste's payment page). Shares `shared/*.js` via `sync-shared.sh` (no bundler).
+  Manifest matches `school_menu.asp`. See `extension/README.md`.
 
 ## Run locally
 ```bash
@@ -45,16 +56,30 @@ printf 'APP_SECRET=%s\n' "$(openssl rand -base64 32)" > .dev.vars
 npx wrangler dev --port 8787 --local        # API at :8787
 cd ../web && python3 -m http.server 5173     # UI at :5173, sign in with Taste creds
 cd worker && npm run test:parse              # parser checks, no login needed
+node shared/order.test.js                    # order-assembly checks
 ```
-Node 23 runs the `.ts` test via `--experimental-strip-types`.
+The parser + order tests are plain JS ES modules (`shared/*.test.js`), run with
+plain `node` (no `--experimental-strip-types`). To run/test the extension, see
+`extension/README.md` (and the chrome-devtools-mcp caveat in memory:
+the MCP-driven Chrome disables extensions — load Taste+ in your own Chrome).
 
 ## Status / next
-- **M0 done**, **M1 done & verified live** (read-only: calendar overview + day
-  option browser; login round-trip works).
-- **Next = M2**: select-and-hand-off ordering (assemble the menu form, POST to
-  `school_menu_checkout.asp` in the browser to land on Taste's payment page).
-  Also resolve M0 tails: order cutoff/lead-time rules, session TTL, account-credit.
-- Then M3 (deploy: Worker + GitHub Pages), M4 (multi-tenant).
+- **M0 done**, **M1 done & verified live** (read-only viewer).
+- **M2 done & verified live (new orders)** — laptop Chrome extension (`extension/`)
+  that runs inside tastenutrition.com, renders a clean picker, and hands off to
+  Taste's own payment page; **card-free**. Design + plan + the pivotal discovery
+  spike are in `docs/superpowers/specs/2026-06-14-m2-ordering-design.md` and
+  `docs/superpowers/plans/2026-06-14-m2-ordering.md`. **Why the device split:**
+  SPEC §4a's cross-origin "POST the order to checkout from our page" can't work
+  card-free (session cookie is `SameSite=Lax` → blocks the cross-site POST; the
+  order lives in Taste's server-side session; reads vs payment use different Taste
+  sessions). So phone = read-only viewer, laptop = extension. M2 = **new orders
+  only**; change/cancel deferred. M0 tails resolved: cutoff = Taste only renders
+  in-window days (it omits past-cutoff days); checkout charges only for non-empty
+  `_days_choices` (existing orders in `_days_choices_previous` are preserved).
+- **Next:** milk add-on fast-follow (Task 7, deferred — needs a live look at
+  `school_menu_choices.asp` `chk` field), then M3 (deploy), M4 (multi-tenant),
+  and eventually change/cancel (needs the edit-charge behavior measured safely).
 
 ## Gotchas learned
 - `[hidden] { display:none !important }` is required — class rules like `.modal`/
