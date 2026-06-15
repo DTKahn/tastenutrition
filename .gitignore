@@ -1,0 +1,17 @@
+# M0 raw captures contain real account/billing PII — never commit.
+m0/*.network-response
+m0/*.network-request
+m0/*.html
+m0/checkout_REQ.txt
+
+# Node / Wrangler
+node_modules/
+.wrangler/
+*.log
+.dev.vars
+
+# Local Claude permissions (machine-specific)
+.claude/settings.local.json
+
+# Screenshots / images in m0 may show student PII
+m0/*.png

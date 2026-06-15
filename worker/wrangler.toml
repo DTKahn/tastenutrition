@@ -1,0 +1,14 @@
+name = "tastenutrition-worker"
+main = "src/index.ts"
+compatibility_date = "2024-06-20"
+
+# Public vars (safe to commit). Set ALLOWED_ORIGIN to your GitHub Pages origin.
+[vars]
+ALLOWED_ORIGIN = "*"
+SESSION_TTL_SECONDS = "1800"
+
+# --- Secrets (DO NOT put real values here) ---
+# APP_SECRET encrypts the session token (the parent's Taste cookie) so the
+# Worker stays stateless and never stores anything. Set it with:
+#   npx wrangler secret put APP_SECRET
+# Use a long random string, e.g. `openssl rand -base64 32`.

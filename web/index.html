@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lunch — a friendlier Taste Nutrition</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <h1>🍱 Lunch</h1>
+      <div id="who" class="who" hidden>
+        <select id="studentSelect" aria-label="Student"></select>
+        <button id="logoutBtn" class="ghost">Log out</button>
+      </div>
+    </header>
+
+    <!-- Login -->
+    <section id="loginView" class="view login" hidden>
+      <form id="loginForm" class="card">
+        <h2>Sign in</h2>
+        <p class="muted">
+          Uses your existing tastenutrition.com login. Your password is sent
+          straight to Taste and never stored.
+        </p>
+        <label>Email<input type="email" id="email" autocomplete="username" required /></label>
+        <label>Password<input type="password" id="password" autocomplete="current-password" required /></label>
+        <button type="submit" id="loginBtn">Sign in</button>
+        <p id="loginError" class="error" role="alert" hidden></p>
+      </form>
+    </section>
+
+    <!-- Calendar -->
+    <section id="calendarView" class="view" hidden>
+      <div id="summary" class="summary"></div>
+      <div id="calendar" class="calendar"></div>
+    </section>
+
+    <!-- Day detail -->
+    <div id="dayModal" class="modal" hidden>
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="dayTitle">
+        <button id="dayClose" class="modal-close" aria-label="Close">×</button>
+        <h2 id="dayTitle"></h2>
+        <p id="dayStatus" class="muted"></p>
+        <ul id="dayOptions" class="options"></ul>
+        <p class="muted small">
+          Ordering is read-only in this version — selecting will come with the
+          payment hand-off (M2).
+        </p>
+      </div>
+    </div>
+
+    <div id="loading" class="loading" hidden>Loading…</div>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
