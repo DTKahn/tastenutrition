@@ -1,38 +1,17 @@
 // HTML parsers for the legacy tastenutrition.com ASP pages.
-//
-// This is the "anti-corruption layer": all the ugly knowledge about Taste's
-// markup lives here and nowhere else. If Taste changes its HTML, only this file
-// (and its fixtures in test/) should need to change. Parsing strategy and field
-// names are documented in ../../m0/FINDINGS.md.
+// Single source of truth, imported by both worker/ and extension/.
+// All ugly knowledge about Taste's markup lives here. Parsing strategy and
+// field names documented in m0/FINDINGS.md.
 
-export interface Student {
-  id: string; // student_id, e.g. "37708"
-  name: string; // e.g. "Felix Kahn"
-  school: string; // e.g. "Action Day - Primary Plus Preschool - Room 1"
-}
+/**
+ * @typedef {{ id: string, name: string, school: string }} Student
+ * @typedef {{ id: string, name: string, description: string, vegetarian: boolean }} MenuOption
+ * @typedef {{ date: string, menuId: string, status: 'ordered'|'available',
+ *   orderedOptionId: string|null, hasChangeOrder: boolean, options: MenuOption[] }} CalendarDay
+ * @typedef {{ studentName: string|null, days: CalendarDay[] }} Calendar
+ */
 
-export interface MenuOption {
-  id: string; // food id, e.g. "6891"
-  name: string; // e.g. "Simple Quiche (v)"
-  description: string; // from the hover tooltip
-  vegetarian: boolean; // name contains "(v)"
-}
-
-export interface CalendarDay {
-  date: string; // ISO "2026-06-24"
-  menuId: string; // e.g. "85537"
-  status: 'ordered' | 'available';
-  orderedOptionId: string | null; // food id currently ordered, if any
-  hasChangeOrder: boolean; // Taste showed a "Change Order" link (editable)
-  options: MenuOption[];
-}
-
-export interface Calendar {
-  studentName: string | null;
-  days: CalendarDay[];
-}
-
-const stripTags = (s: string) =>
+const stripTags = (s) =>
   s
     .replace(/<[^>]+>/g, '')
     .replace(/&nbsp;/g, ' ')
@@ -43,18 +22,18 @@ const stripTags = (s: string) =>
     .trim();
 
 /** D-M-YYYY (e.g. "24-6-2026") -> ISO "2026-06-24". */
-function toIso(dmy: string): string {
+function toIso(dmy) {
   const [d, m, y] = dmy.split('-');
   return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
 }
 
 /** Parse the dashboard (user_profile.asp) into the student list. */
-export function parseStudents(html: string): Student[] {
-  const students: Student[] = [];
-  const seen = new Set<string>();
+export function parseStudents(html) {
+  const students = [];
+  const seen = new Set();
   // Each student row has a "Menu/Orders" button: onClick="school_menu(37708)".
   const re = /school_menu\((\d+)\)/g;
-  let match: RegExpExecArray | null;
+  let match;
   while ((match = re.exec(html))) {
     const id = match[1];
     if (seen.has(id)) continue;
@@ -83,12 +62,12 @@ export function parseStudents(html: string): Student[] {
 }
 
 /** Parse the menu page (school_menu.asp) into a calendar with current orders. */
-export function parseCalendar(html: string): Calendar {
+export function parseCalendar(html) {
   // Current orders are embedded as hidden fields, one per ordered day:
   //   menu<menuId>_days_choices_previous = "<foodId>;"
-  const ordered = new Map<string, string>();
+  const ordered = new Map();
   const ordRe = /name="menu(\d+)_days_choices_previous"\s+value="([^"]+)"/g;
-  let o: RegExpExecArray | null;
+  let o;
   while ((o = ordRe.exec(html))) {
     const optId = o[2].replace(/;.*$/, '').trim();
     if (optId) ordered.set(o[1], optId);
@@ -104,7 +83,7 @@ export function parseCalendar(html: string): Calendar {
 
   // Split into day cells. Available days are class="menucell"; days that already
   // have an order are class="menucell2". Split on the shared prefix.
-  const days: CalendarDay[] = [];
+  const days = [];
   const cells = html.split(/class="menucell\d*"/i).slice(1);
   for (const cell of cells) {
     // Both cell types carry a menuprompt('D-M-YYYY') (wrapper or Change Order).
@@ -118,19 +97,19 @@ export function parseCalendar(html: string): Calendar {
     // The tooltip attribute embeds '>' and '</div>', so:
     //   1) grab descriptions first, bounded by </td> (tooltips never contain it);
     //   2) strip on*="…" handlers, then read the visible label safely.
-    const descById = new Map<string, string>();
+    const descById = new Map();
     const descRe = /id="\d+\^(\d+)"([\s\S]*?)<\/td>/g;
-    let q: RegExpExecArray | null;
+    let q;
     while ((q = descRe.exec(cell))) {
       const tip = /fixedtooltip\('([\s\S]*?)',\s*this/.exec(q[2]);
       if (tip) descById.set(q[1], stripTags(tip[1]));
     }
 
-    const options: MenuOption[] = [];
+    const options = [];
     let menuId = '';
     const clean = cell.replace(/\son\w+="[^"]*"/g, '');
     const optRe = /id="(\d+)\^(\d+)"[^>]*>([\s\S]*?)<\/td>/g;
-    let p: RegExpExecArray | null;
+    let p;
     while ((p = optRe.exec(clean))) {
       menuId = p[1];
       const optId = p[2];
@@ -161,7 +140,7 @@ export function parseCalendar(html: string): Calendar {
 }
 
 /** Heuristic login-success check: profile page shows the dashboard, not a login form. */
-export function looksLoggedIn(html: string): boolean {
+export function looksLoggedIn(html) {
   return (
     /Account Dashboard|school_menu\(\d+\)|Menu\/Orders/i.test(html) &&
     !/name="password"/i.test(html)

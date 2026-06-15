@@ -8,7 +8,7 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit",
-    "test:parse": "node --experimental-strip-types test/parse.test.ts"
+    "test:parse": "node ../shared/parse.test.js"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240620.0",
