@@ -1,5 +1,5 @@
 // Client for tastenutrition.com. Speaks the legacy ASP site's language
-// (session cookie + form POSTs) and hands back raw HTML for parse.ts.
+// (session cookie + form POSTs) and hands back raw HTML for shared/parse.js.
 // Endpoint contract: ../../m0/FINDINGS.md.
 
 import { parseCalendar, parseStudents, looksLoggedIn } from '../../shared/parse.js';
