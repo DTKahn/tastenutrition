@@ -22,13 +22,26 @@ check('available day -> exactly one field write', () => {
   assert.deepEqual(writes, [{ name: 'menu85537_days_choices', value: '2524' }]);
 });
 
-check('never writes a field for an already-ordered day (preservation)', () => {
+check('writes target only the requested day (no stray writes)', () => {
   const writes = assembleOrderFields(cal, [{ menuId: '85537', foodId: '2524' }]);
   const orderedMenuIds = cal.days.filter((d) => d.status === 'ordered').map((d) => d.menuId);
   assert.ok(orderedMenuIds.length >= 8, 'fixture has existing orders to protect');
   for (const mid of orderedMenuIds) {
     assert.ok(!writes.some((w) => w.name.includes(mid)), `no write touches ordered day ${mid}`);
   }
+});
+
+check('a batch mixing an ordered day with an available one is rejected (preserves existing)', () => {
+  // The real preservation guard: if an already-ordered day slips into a batch,
+  // the whole submit throws rather than risk re-charging it.
+  assert.throws(
+    () =>
+      assembleOrderFields(cal, [
+        { menuId: '85537', foodId: '2524' }, // available
+        { menuId: '85531', foodId: '3893' }, // already ordered
+      ]),
+    /already ordered/,
+  );
 });
 
 check('rejects ordering a day that already has an order', () => {
