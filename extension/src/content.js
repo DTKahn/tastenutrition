@@ -17,13 +17,10 @@
   const { assembleOrderFields } = await import(chrome.runtime.getURL('shared/order.js'));
   const { applyAndCheckout }    = await import(chrome.runtime.getURL('src/checkout.js'));
 
-  // Fetch fresh menu HTML from Taste.
-  const raw = await fetch('/school_menu.asp', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ mode: '', studentid: '', student_id: studentId }).toString(),
-    credentials: 'include',
-  }).then((r) => r.text());
+  // Parse the page the browser already loaded — it carries the full school-year
+  // calendar (e.g. May–Jul) with the correct session context. Re-fetching via
+  // POST only returns the current ordering window and drops historical months.
+  const raw = document.documentElement.outerHTML;
 
   const calendar = parseCalendar(raw);
   console.log(`[taste+] parsed ${calendar.days.length} days`);
