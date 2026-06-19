@@ -28,9 +28,11 @@ export function mountUI({ calendar, onSubmit, shadowRoot }) {
 
   let weekStart = getMondayOf(new Date());
 
-  // Build skeleton
-  shadowRoot.innerHTML = `
-    <div id="ext-root">
+  // Build skeleton — append rather than setting shadowRoot.innerHTML so that
+  // <style> elements already appended by content.js are not wiped.
+  const extRoot = document.createElement('div');
+  extRoot.id = 'ext-root';
+  extRoot.innerHTML = `
       <header class="topbar">
         <span class="topbar-logo">🍱 Lunch</span>
         <div class="topbar-right">${calendar.studentName ? `<span>${calendar.studentName}</span>` : ''}</div>
@@ -45,8 +47,8 @@ export function mountUI({ calendar, onSubmit, shadowRoot }) {
       <footer id="footer-bar">
         <div id="footer-info"><span id="footer-count"></span></div>
         <button id="continue-btn" disabled>Continue to payment →</button>
-      </footer>
-    </div>`;
+      </footer>`;
+  shadowRoot.appendChild(extRoot);
 
   // Wire week nav
   shadowRoot.getElementById('prev-week').addEventListener('click', () => {
