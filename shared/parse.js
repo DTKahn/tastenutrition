@@ -84,13 +84,28 @@ export function parseCalendar(html) {
 
   // Split into day cells. Available days are class="menucell"; days that already
   // have an order are class="menucell2". Split on the shared prefix.
+
+  // Past months don't carry menuprompt() — extract year from any future cell
+  // so we can reconstruct full ISO dates from the "DOW&nbsp;M/D" label.
+  const yearMatch = /menuprompt\('\d{1,2}-\d{1,2}-(\d{4})'\)/.exec(html);
+  const schoolYear = yearMatch ? parseInt(yearMatch[1]) : new Date().getFullYear();
+
   const days = [];
   const cells = html.split(/class="menucell\d*"/i).slice(1);
   for (const cell of cells) {
-    // Both cell types carry a menuprompt('D-M-YYYY') (wrapper or Change Order).
-    const dateMatch = /menuprompt\('(\d{1,2}-\d{1,2}-\d{4})'\)/.exec(cell);
-    if (!dateMatch) continue;
-    const date = toIso(dateMatch[1]);
+    // Future/current cells: menuprompt('D-M-YYYY'). Past-month cells: no
+    // menuprompt — date is in a "DOW&nbsp;M/D" label (e.g. "Fri&nbsp;5/1").
+    const promptMatch = /menuprompt\('(\d{1,2}-\d{1,2}-\d{4})'\)/.exec(cell);
+    let date;
+    if (promptMatch) {
+      date = toIso(promptMatch[1]);
+    } else {
+      const labelMatch = /(?:Mon|Tue|Wed|Thu|Fri)&nbsp;(\d{1,2})\/(\d{1,2})/.exec(cell);
+      if (!labelMatch) continue;
+      const m = String(parseInt(labelMatch[1])).padStart(2, '0');
+      const d = String(parseInt(labelMatch[2])).padStart(2, '0');
+      date = `${schoolYear}-${m}-${d}`;
+    }
 
     // Each option is `<div id="menuId^optId" name=...>LABEL</div>` inside its own
     // `<td class="lucida10">`. LABEL is either plain text, a `<span>` with a
