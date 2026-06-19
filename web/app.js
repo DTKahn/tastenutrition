@@ -1,41 +1,41 @@
-// Frontend for the Taste Nutrition front-end. Talks only to our Worker's JSON
-// API (config.js -> window.TASTE_API_BASE). Read-only in M1: view ordered days
-// and browse each day's options. Ordering + payment hand-off arrive in M2.
+// web/app.js — Taste+ viewer (read-only). Talks to our Worker's JSON API.
+// Renders a week-at-a-glance grid (Mon–Fri) or stacked cards below 700px.
+
+import {
+  renderDayCard,
+  renderEmptyDayCard,
+  getMondayOf,
+  getWeekDates,
+  formatWeekLabel,
+} from '../shared/ui.js';
 
 const API = window.TASTE_API_BASE;
 const $ = (id) => document.getElementById(id);
+const BREAKPOINT = 700; // px — below = stack, at or above = week grid
 
 const state = {
-  token: localStorage.getItem('taste_token') || null,
-  students: [],
+  token:     localStorage.getItem('taste_token') || null,
+  students:  [],
   studentId: null,
-  calendar: null,
+  calendar:  null, // { studentName, days: CalendarDay[] }
+  weekStart: null, // Date (always a Monday)
 };
 
-const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
-
-// --- API helpers ---------------------------------------------------------
+// ── API ──────────────────────────────────────────────────────────
 async function api(path, opts = {}) {
   const headers = { ...(opts.headers || {}) };
   if (state.token) headers['Authorization'] = `Bearer ${state.token}`;
-  if (opts.body) headers['Content-Type'] = 'application/json';
+  if (opts.body)   headers['Content-Type'] = 'application/json';
   const res = await fetch(`${API}${path}`, { ...opts, headers });
   const data = await res.json().catch(() => ({}));
-  if (res.status === 401) {
-    logout();
-    throw new Error(data.error || 'Please sign in again.');
-  }
+  if (res.status === 401) { logout(); throw new Error(data.error || 'Please sign in again.'); }
   if (!res.ok) throw new Error(data.error || `Request failed (${res.status}).`);
   return data;
 }
 
 const showLoading = (on) => $('loading').toggleAttribute('hidden', !on);
 
-// --- Auth ----------------------------------------------------------------
+// ── Auth ─────────────────────────────────────────────────────────
 async function onLogin(e) {
   e.preventDefault();
   const err = $('loginError');
@@ -45,7 +45,7 @@ async function onLogin(e) {
     const data = await api('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({
-        email: $('email').value.trim(),
+        email:    $('email').value.trim(),
         password: $('password').value,
       }),
     });
@@ -53,7 +53,7 @@ async function onLogin(e) {
     localStorage.setItem('taste_token', data.token);
     $('password').value = '';
     setStudents(data.students || []);
-    render();
+    renderShell();
   } catch (ex) {
     err.textContent = ex.message;
     err.hidden = false;
@@ -66,8 +66,9 @@ function logout() {
   state.token = null;
   state.calendar = null;
   state.students = [];
+  state.weekStart = null;
   localStorage.removeItem('taste_token');
-  render();
+  renderShell();
 }
 
 function setStudents(students) {
@@ -83,139 +84,86 @@ function setStudents(students) {
   }
 }
 
-// --- Data ----------------------------------------------------------------
+// ── Data ─────────────────────────────────────────────────────────
 async function loadCalendar() {
   if (!state.studentId) return;
   showLoading(true);
   try {
-    state.calendar = await api(
-      `/api/calendar?student=${encodeURIComponent(state.studentId)}`,
-    );
-    renderCalendar();
+    state.calendar = await api(`/api/calendar?student=${encodeURIComponent(state.studentId)}`);
+    state.weekStart = getMondayOf(new Date());
+    renderWeek();
   } catch (ex) {
-    $('calendar').innerHTML = `<p class="error">${ex.message}</p>`;
+    $('calendarContainer').innerHTML = `<p style="padding:16px;color:#dc2626">${ex.message}</p>`;
   } finally {
     showLoading(false);
   }
 }
 
-// --- Rendering -----------------------------------------------------------
-function render() {
+// ── Rendering ────────────────────────────────────────────────────
+
+/** Show/hide login vs calendar views. */
+function renderShell() {
   const authed = !!state.token;
   $('loginView').toggleAttribute('hidden', authed);
   $('calendarView').toggleAttribute('hidden', !authed);
-  $('who').toggleAttribute('hidden', !authed);
+  $('topbarRight').toggleAttribute('hidden', !authed);
   if (authed && !state.calendar) loadCalendar();
 }
 
-function renderCalendar() {
+/** Render the current week into #calendarContainer. */
+function renderWeek() {
   const cal = state.calendar;
-  const days = cal.days || [];
-  const ordered = days.filter((d) => d.status === 'ordered');
-  $('summary').innerHTML = days.length
-    ? `<strong>${ordered.length}</strong> ordered day${ordered.length === 1 ? '' : 's'} · ` +
-      `<strong>${days.length - ordered.length}</strong> still open${
-        cal.studentName ? ` · ${escapeHtml(cal.studentName)}` : ''
-      }`
-    : 'No upcoming menu days found.';
+  const weekStart = state.weekStart;
+  if (!cal || !weekStart) return;
 
-  // Group days by month.
-  const byMonth = new Map();
-  for (const d of days) {
-    const key = d.date.slice(0, 7); // YYYY-MM
-    if (!byMonth.has(key)) byMonth.set(key, []);
-    byMonth.get(key).push(d);
-  }
+  const weekDates = getWeekDates(weekStart);
+  const dayMap = new Map(cal.days.map((d) => [d.date, d]));
 
-  const root = $('calendar');
-  root.innerHTML = '';
-  for (const [key, monthDays] of byMonth) {
-    const [y, m] = key.split('-').map(Number);
-    const section = document.createElement('div');
-    section.className = 'month';
-    section.innerHTML = `<h3>${MONTHS[m - 1]} ${y}</h3>`;
+  // Week nav label and prev/next availability
+  const label = formatWeekLabel(weekStart);
+  const allDates = cal.days.map((d) => d.date).sort();
+  const firstWeek = allDates.length ? getMondayOf(new Date(allDates[0] + 'T00:00:00')) : weekStart;
+  const lastWeek  = allDates.length ? getMondayOf(new Date(allDates[allDates.length - 1] + 'T00:00:00')) : weekStart;
+  const hasPrev = weekStart > firstWeek;
+  const hasNext = weekStart < lastWeek;
 
-    const grid = document.createElement('div');
-    grid.className = 'grid';
-    for (const name of DOW) {
-      const h = document.createElement('div');
-      h.className = 'dow';
-      h.textContent = name;
-      grid.appendChild(h);
-    }
+  // Summary
+  const ordered  = cal.days.filter((d) => d.status === 'ordered').length;
+  const orderable = cal.days.filter((d) => d.orderable).length;
+  const summaryHtml = `<span class="week-summary">${ordered} ordered · ${orderable} open</span>`;
 
-    // Leading blanks so the 1st-of-data lands on the right weekday.
-    const first = new Date(`${monthDays[0].date}T00:00:00`);
-    for (let i = 0; i < first.getDay(); i++) {
-      const blank = document.createElement('div');
-      blank.className = 'day empty';
-      grid.appendChild(blank);
-    }
+  // Build day cards
+  const useGrid = window.innerWidth >= BREAKPOINT;
+  const containerClass = useGrid ? 'week-grid' : 'week-stack';
+  const cardsHtml = weekDates
+    .map((iso) => {
+      const day = dayMap.get(iso);
+      return day ? renderDayCard(day, { readonly: true }) : renderEmptyDayCard(iso);
+    })
+    .join('');
 
-    const byDate = new Map(monthDays.map((d) => [d.date, d]));
-    const last = new Date(`${monthDays[monthDays.length - 1].date}T00:00:00`);
-    for (let day = first.getDate(); day <= last.getDate(); day++) {
-      const iso = `${key}-${String(day).padStart(2, '0')}`;
-      const d = byDate.get(iso);
-      if (!d) {
-        const blank = document.createElement('div');
-        blank.className = 'day empty';
-        grid.appendChild(blank);
-        continue;
-      }
-      grid.appendChild(dayCell(d, day));
-    }
-    section.appendChild(grid);
-    root.appendChild(section);
-  }
-}
+  $('calendarContainer').innerHTML =
+    `<div class="week-nav">` +
+    `<button id="prevWeek" ${hasPrev ? '' : 'disabled'}>‹</button>` +
+    `<h2>${label}</h2>` +
+    summaryHtml +
+    `<button id="nextWeek" ${hasNext ? '' : 'disabled'}>›</button>` +
+    `</div>` +
+    `<div class="${containerClass}">${cardsHtml}</div>`;
 
-function dayCell(d, dayNum) {
-  const cell = document.createElement('button');
-  cell.className = 'day' + (d.status === 'ordered' ? ' ordered' : '');
-  cell.innerHTML = `<span class="num">${dayNum}</span>`;
-  if (d.status === 'ordered') {
-    const opt = d.options.find((o) => o.id === d.orderedOptionId);
-    cell.innerHTML += `<span class="pill">ORDERED</span>` +
-      `<span class="chosen">${escapeHtml(opt ? opt.name : 'Ordered')}</span>`;
-  } else {
-    cell.innerHTML += `<span class="avail">${d.options.length} options</span>`;
-  }
-  cell.addEventListener('click', () => openDay(d));
-  return cell;
-}
-
-function openDay(d) {
-  const date = new Date(`${d.date}T00:00:00`);
-  $('dayTitle').textContent = date.toLocaleDateString(undefined, {
-    weekday: 'long', month: 'long', day: 'numeric',
+  $('prevWeek').addEventListener('click', () => {
+    state.weekStart = new Date(weekStart);
+    state.weekStart.setDate(state.weekStart.getDate() - 7);
+    renderWeek();
   });
-  $('dayStatus').textContent =
-    d.status === 'ordered' ? 'You have an order for this day.' : 'No order yet.';
-
-  const ul = $('dayOptions');
-  ul.innerHTML = '';
-  for (const o of d.options) {
-    const li = document.createElement('li');
-    if (o.id === d.orderedOptionId) li.className = 'is-ordered';
-    li.innerHTML =
-      `<div class="opt-name">${escapeHtml(o.name)}${
-        o.vegetarian ? '<span class="veg">VEG</span>' : ''
-      }</div>` +
-      (o.description ? `<div class="opt-desc">${escapeHtml(o.description)}</div>` : '') +
-      (o.id === d.orderedOptionId ? `<div class="opt-tag">✓ Your order</div>` : '');
-    ul.appendChild(li);
-  }
-  $('dayModal').hidden = false;
+  $('nextWeek').addEventListener('click', () => {
+    state.weekStart = new Date(weekStart);
+    state.weekStart.setDate(state.weekStart.getDate() + 7);
+    renderWeek();
+  });
 }
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]),
-  );
-}
-
-// --- Wire up -------------------------------------------------------------
+// ── Wire up ──────────────────────────────────────────────────────
 $('loginForm').addEventListener('submit', onLogin);
 $('logoutBtn').addEventListener('click', logout);
 $('studentSelect').addEventListener('change', (e) => {
@@ -223,9 +171,12 @@ $('studentSelect').addEventListener('change', (e) => {
   state.calendar = null;
   loadCalendar();
 });
-$('dayClose').addEventListener('click', () => ($('dayModal').hidden = true));
-$('dayModal').addEventListener('click', (e) => {
-  if (e.target.id === 'dayModal') $('dayModal').hidden = true;
+
+// Re-render on resize (layout switch)
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(renderWeek, 150);
 });
 
-render();
+renderShell();
