@@ -11,21 +11,23 @@ Status key: `[ ]` todo · `[~]` in progress · `[x]` done
 
 ## Now / next up
 
-- [ ] **Rebuild the laptop ordering UI to the agreed bar.** What shipped in M2 is
-  a minimal right-side **overlay list**; the approved design (design doc §5)
-  called for a polished UI that **looks like the M1 viewer and replaces Taste's
-  page**. Scope:
-  - Port the M1 viewer's **calendar grid + day-detail** into `extension/`
-    (`src/ui.js` + a stylesheet), reusing `web/styles.css`'s look.
-  - Show option **descriptions + dietary tags** (the parser already returns
-    these — they're just not displayed yet).
-  - **Take over** `school_menu.asp`: hide Taste's markup and render full-bleed,
-    instead of overlaying a panel.
-  - Fix the misleading "reuses web/app.js" comment in `extension/src/ui.js`.
-  - **Don't change** the ordering mechanism / payment hand-off underneath — it's
-    done and money-safe. This is front-end work on a solid base.
-  - **Bar:** "laptop ordering looks like the M1 viewer and replaces Taste's page."
-  - Start with a quick design pass (lock look + behavior visibly) before building.
+- [~] **M2 UI rebuild — live & mostly working; open polish items below.** The
+  full-bleed shadow-DOM extension UI was rebuilt (shared `ui.js`/`tokens.css`,
+  week-grid layout, interactive option cards, footer bar). Verified live
+  Jun 19 2026. Remaining known issues:
+  - [ ] **Verify May data is now visible** after the `outerHTML` fix (parse
+    existing page DOM instead of re-fetching; pushed 2026-06-19 but not yet
+    tested by user). Expected: ‹ nav now reaches May.
+  - [ ] **Verify week-nav default start** (Jun 22 fix) works end-to-end after
+    the outerHTML change.
+  - [ ] **Ordered-day states on extension** — confirm locked options + faded
+    siblings render correctly when navigating to an already-ordered week.
+  - [ ] **Payment hand-off smoke test** — select ≥1 new day, tap Continue;
+    confirm Taste's checkout page loads with correct total (existing M2 test).
+  - [ ] **Color / typography pass** — placeholder token values; refine
+    `shared/tokens.css` once layout is confirmed solid.
+  - [ ] **Web app parity** — `web/` side of the redesign (same shared components)
+    needs end-to-end smoke test on mobile (375 px) and desktop (1280 px).
 
 ## Backlog (prioritized)
 
