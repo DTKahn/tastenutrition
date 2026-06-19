@@ -18,3 +18,5 @@ node_modules/
 
 # Screenshots / images in m0 may show student PII
 m0/*.png
+
+.superpowers/
