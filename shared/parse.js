@@ -14,6 +14,8 @@
 
 const stripTags = (s) =>
   s
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
     .replace(/<[^>]+>/g, '')
     .replace(/&nbsp;/g, ' ')
     .replace(/&#39;/g, "'")
