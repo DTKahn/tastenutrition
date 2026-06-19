@@ -26,7 +26,14 @@ const BREAKPOINT = 700; // px
 export function mountUI({ calendar, onSubmit, shadowRoot }) {
   const selections = new Map(); // menuId → optionId (in-progress picks)
 
-  let weekStart = getMondayOf(new Date());
+  // Start on the week containing today if it has data; otherwise the first
+  // data week. Avoids landing on a blank week when today is before the window.
+  const todayMonday = getMondayOf(new Date());
+  const allDatesInit = calendar.days.map((d) => d.date).sort();
+  const firstDataWeek = allDatesInit.length
+    ? getMondayOf(new Date(allDatesInit[0] + 'T00:00:00'))
+    : todayMonday;
+  let weekStart = todayMonday >= firstDataWeek ? todayMonday : firstDataWeek;
 
   // Build skeleton — append rather than setting shadowRoot.innerHTML so that
   // <style> elements already appended by content.js are not wiped.
