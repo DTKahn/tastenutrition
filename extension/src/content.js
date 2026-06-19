@@ -42,10 +42,13 @@
   const shadow = host.attachShadow({ mode: 'open' });
 
   // ── Inject design tokens into shadow root ──────────────────────
+  // `:root` in shadow DOM stylesheets refers to the light-DOM document root, not
+  // the shadow tree — so custom properties defined on `:root` won't inherit to
+  // shadow elements. Rewrite to `:host` so vars are defined on the shadow host.
   const tokensUrl = chrome.runtime.getURL('shared/tokens.css');
   const tokensCss = await fetch(tokensUrl).then((r) => r.text());
   const tokenStyle = document.createElement('style');
-  tokenStyle.textContent = tokensCss;
+  tokenStyle.textContent = tokensCss.replace(':root', ':host');
   shadow.appendChild(tokenStyle);
 
   // ── Inject component styles ────────────────────────────────────
