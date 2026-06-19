@@ -12,7 +12,15 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["shared/parse.js", "shared/order.js", "src/ui.js", "src/checkout.js", "src/styles.css"],
+      "resources": [
+        "shared/parse.js",
+        "shared/order.js",
+        "shared/ui.js",
+        "shared/tokens.css",
+        "src/ui.js",
+        "src/checkout.js",
+        "src/styles.css"
+      ],
       "matches": ["https://www.tastenutrition.com/*"]
     }
   ]
