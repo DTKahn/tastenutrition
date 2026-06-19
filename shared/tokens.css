@@ -1,0 +1,46 @@
+/* Taste+ design tokens — placeholder color pass (values will be refined later).
+   All component CSS must reference these vars — no hardcoded colors. */
+:root {
+  /* selected / ordered state */
+  --color-selected-bg:   #f0fdf4;
+  --color-selected-text: #15803d;
+  --color-selected-desc: #86efac;
+  --color-selected-ind:  #22c55e;
+
+  /* faded state (unselected siblings on ordered day, closed-window options) */
+  --color-faded-opacity: 0.35;
+
+  /* day-column border tints */
+  --color-border-ordered: #bbf7d0;
+  --color-border-closed:  #f1f5f9;
+
+  /* page / surface */
+  --color-page-bg:    #f1f5f9;
+  --color-surface:    #ffffff;
+  --color-border:     #e2e8f0;
+  --color-item-border:#f1f5f9;
+
+  /* text */
+  --color-text-primary: #1e293b;
+  --color-text-muted:   #94a3b8;
+  --color-text-subtle:  #64748b;
+
+  /* accent (footer button, active nav, links) */
+  --color-accent: #3b82f6;
+
+  /* VEG badge */
+  --color-veg-text: #16a34a;
+  --color-veg-bg:   #dcfce7;
+
+  /* ordered badge */
+  --color-badge-ordered-text: #15803d;
+  --color-badge-ordered-bg:   #dcfce7;
+
+  /* spacing / shape */
+  --radius-card:  10px;
+  --radius-badge: 20px;
+  --gap-grid:     8px;
+
+  /* layout breakpoint (used in JS, mirrored here for reference) */
+  /* 700px — below = stack, at or above = week grid */
+}
