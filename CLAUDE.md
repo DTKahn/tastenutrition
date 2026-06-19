@@ -5,6 +5,7 @@ site (a parent ordering portal). Goal: see which days are ordered and browse/
 pick each day's options in a good UI, treating Taste as a headless backend.
 
 ## Read these first
+- **`BACKLOG.md`** — the living, prioritized queue of what's next. Keep it current.
 - **`SPEC.md`** — goals, decisions, scope, architecture.
 - **`m0/FINDINGS.md`** — the reverse-engineered Taste contract (endpoints, form
   fields, data model). `m0/` also has raw HTML captures. **`m0/` is gitignored —
@@ -63,38 +64,27 @@ plain `node` (no `--experimental-strip-types`). To run/test the extension, see
 `extension/README.md` (and the chrome-devtools-mcp caveat in memory:
 the MCP-driven Chrome disables extensions — load Taste+ in your own Chrome).
 
-## Status / next
-- **M0 done**, **M1 done & verified live** (read-only viewer).
-- **M2 ordering MECHANISM done & verified live (new orders); UI NOT yet to spec.**
-  Laptop Chrome extension (`extension/`) runs inside tastenutrition.com, picks
-  days, writes Taste's order form, and hands off to Taste's payment page;
-  **card-free**, money-safe (verified live). ⚠️ **But the UI is a placeholder:**
-  what shipped is a minimal right-side **overlay list**. The approved design
-  (design doc §5) called for a **polished calendar that looks like the M1 viewer
-  and REPLACES Taste's page** — that was silently narrowed in the plan and is the
-  **top next task** (below). Design + plan + the pivotal discovery
-  spike are in `docs/superpowers/specs/2026-06-14-m2-ordering-design.md` and
-  `docs/superpowers/plans/2026-06-14-m2-ordering.md`. **Why the device split:**
-  SPEC §4a's cross-origin "POST the order to checkout from our page" can't work
-  card-free (session cookie is `SameSite=Lax` → blocks the cross-site POST; the
-  order lives in Taste's server-side session; reads vs payment use different Taste
-  sessions). So phone = read-only viewer, laptop = extension. M2 = **new orders
-  only**; change/cancel deferred. M0 tails resolved: cutoff = Taste only renders
-  in-window days (it omits past-cutoff days); checkout charges only for non-empty
-  `_days_choices` (existing orders in `_days_choices_previous` are preserved).
-- **Next — TOP PRIORITY: rebuild the laptop ordering UI to the agreed bar.**
-  Port the M1 viewer's calendar + day-detail (month grid; day → options with
-  **descriptions + dietary tags**, which the parser already returns; reuse
-  `web/styles.css`'s look) into `extension/` (`src/ui.js` + a stylesheet), and
-  make it **take over** `school_menu.asp` — hide Taste's markup, render full-bleed
-  — instead of overlaying a minimal list. The ordering mechanism + payment hand-off
-  underneath already work and shouldn't change; this is front-end work on a solid
-  base, reusing the shared parser. Also fix the misleading "reuses web/app.js"
-  comment in `extension/src/ui.js`. Bar: "laptop ordering looks like the M1 viewer
-  and replaces Taste's page."
-- **Then:** milk add-on fast-follow (needs a live look at
-  `school_menu_choices.asp` `chk` field), M3 (deploy), M4 (multi-tenant), and
-  change/cancel (needs the edit-charge behavior measured safely).
+## Status
+- **M0 / M1 done & verified live** (read-only viewer). **M2 ordering MECHANISM
+  done, merged & verified live** (new orders) — laptop Chrome extension
+  (`extension/`) picks days → writes Taste's order form → hands off to Taste's
+  payment page, **card-free** and money-safe. ⚠️ **But the M2 UI is a placeholder**
+  (minimal overlay list), not the approved polished calendar that *replaces*
+  Taste's page — rebuilding it is the top backlog item.
+- **Why the device split (don't relitigate):** SPEC §4a's cross-origin "POST the
+  order from our page" can't work card-free — session cookie is `SameSite=Lax`
+  (blocks the cross-site POST), the order lives in Taste's server-side session,
+  and reads vs payment use different Taste sessions. So **phone = read-only
+  viewer, laptop = extension.** M0 tails resolved: cutoff = Taste only renders
+  in-window days; checkout charges only for non-empty `_days_choices` (existing
+  orders in `_days_choices_previous` are preserved). Full rationale + the discovery
+  spike: `docs/superpowers/specs/2026-06-14-m2-ordering-design.md`.
+
+## What's next
+**The actionable, prioritized queue lives in [`BACKLOG.md`](BACKLOG.md)** — keep
+it up to date as work lands. Top item right now: rebuild the laptop ordering UI to
+look like the M1 viewer and replace Taste's page (the M2 mechanism underneath is
+done; this is front-end work).
 
 ## Gotchas learned
 - `[hidden] { display:none !important }` is required — class rules like `.modal`/
