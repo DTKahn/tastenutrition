@@ -1,10 +1,10 @@
+/* Load tokens — must be first rule per CSS spec */
+@import url('../shared/tokens.css');
+
 /* Must beat class rules so [hidden] always wins */
 [hidden] { display: none !important; }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-/* Load tokens */
-@import url('../shared/tokens.css');
 
 html, body {
   font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
