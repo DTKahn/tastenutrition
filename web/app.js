@@ -28,12 +28,22 @@ async function api(path, opts = {}) {
   if (opts.body)   headers['Content-Type'] = 'application/json';
   const res = await fetch(`${API}${path}`, { ...opts, headers });
   const data = await res.json().catch(() => ({}));
-  if (res.status === 401) { logout(); throw new Error(data.error || 'Please sign in again.'); }
+  if (res.status === 401) {
+    logout('Your session expired. Please sign in again.');
+    throw Object.assign(new Error('session-expired'), { sessionExpired: true });
+  }
   if (!res.ok) throw new Error(data.error || `Request failed (${res.status}).`);
   return data;
 }
 
 const showLoading = (on) => $('loading').toggleAttribute('hidden', !on);
+
+function showCalendarError(msg) {
+  const p = document.createElement('p');
+  p.style.cssText = 'padding:16px;color:#dc2626';
+  p.textContent = msg;
+  $('calendarContainer').replaceChildren(p);
+}
 
 // ── Auth ─────────────────────────────────────────────────────────
 async function onLogin(e) {
@@ -62,13 +72,17 @@ async function onLogin(e) {
   }
 }
 
-function logout() {
+function logout(sessionMsg = null) {
   state.token = null;
   state.calendar = null;
   state.students = [];
   state.weekStart = null;
   localStorage.removeItem('taste_token');
   renderShell();
+  if (sessionMsg) {
+    $('loginError').textContent = sessionMsg;
+    $('loginError').hidden = false;
+  }
 }
 
 function setStudents(students) {
@@ -85,6 +99,24 @@ function setStudents(students) {
 }
 
 // ── Data ─────────────────────────────────────────────────────────
+
+// Called on page load when a token exists but no students are in memory yet.
+// Validates the token and restores session state; 401 auto-calls logout() via api().
+async function initSession() {
+  showLoading(true);
+  try {
+    const data = await api('/api/students');
+    setStudents(data.students || []);
+    await loadCalendar();
+  } catch (ex) {
+    if (state.token && !ex.sessionExpired) {
+      showCalendarError(ex.message);
+    }
+  } finally {
+    showLoading(false);
+  }
+}
+
 async function loadCalendar() {
   if (!state.studentId) return;
   showLoading(true);
@@ -93,7 +125,7 @@ async function loadCalendar() {
     state.weekStart = getMondayOf(new Date());
     renderWeek();
   } catch (ex) {
-    $('calendarContainer').innerHTML = `<p style="padding:16px;color:#dc2626">${ex.message}</p>`;
+    if (!ex.sessionExpired) showCalendarError(ex.message);
   } finally {
     showLoading(false);
   }
@@ -107,7 +139,10 @@ function renderShell() {
   $('loginView').toggleAttribute('hidden', authed);
   $('calendarView').toggleAttribute('hidden', !authed);
   $('topbarRight').toggleAttribute('hidden', !authed);
-  if (authed && !state.calendar) loadCalendar();
+  if (authed && !state.calendar) {
+    if (state.studentId) loadCalendar();
+    else initSession();
+  }
 }
 
 /** Render the current week into #calendarContainer. */
