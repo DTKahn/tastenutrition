@@ -47,8 +47,16 @@ async function requireCookie(req: Request, env: Env): Promise<string> {
   return cookie;
 }
 
+async function cookieHash(cookie: string): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(cookie));
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+    .slice(0, 16);
+}
+
 export default {
-  async fetch(req: Request, env: Env): Promise<Response> {
+  async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(req.url);
 
     if (req.method === 'OPTIONS') {
@@ -88,7 +96,30 @@ export default {
         if (!student) {
           return json(env, { error: 'Missing ?student=<id>.' }, 400);
         }
-        return json(env, await getCalendar(cookie, student));
+        const hash = await cookieHash(cookie);
+        const cacheKey = new Request(
+          `https://taste-cache/v1/calendar?s=${encodeURIComponent(student)}&u=${hash}`,
+        );
+        const cached = await caches.default.match(cacheKey);
+        if (cached) {
+          return new Response(cached.body, {
+            status: 200,
+            headers: { 'Content-Type': 'application/json', ...cors(env) },
+          });
+        }
+        const data = await getCalendar(cookie, student);
+        ctx.waitUntil(
+          caches.default.put(
+            cacheKey,
+            new Response(JSON.stringify(data), {
+              headers: {
+                'Cache-Control': 'public, max-age=300',
+                'Content-Type': 'application/json',
+              },
+            }),
+          ),
+        );
+        return json(env, data);
       }
 
       return json(env, { error: 'Not found.' }, 404);
