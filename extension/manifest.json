@@ -17,6 +17,7 @@
         "shared/order.js",
         "shared/ui.js",
         "shared/tokens.css",
+        "shared/components.css",
         "src/ui.js",
         "src/checkout.js",
         "src/styles.css"

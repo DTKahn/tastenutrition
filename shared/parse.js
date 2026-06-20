@@ -14,6 +14,11 @@
 
 const stripTags = (s) =>
   s
+    // Taste's ASP pages are Windows-1252; bytes 0x80–0x9F that survive as C1
+    // control chars (U+0080–U+009F) need remapping to their Win-1252 equivalents.
+    .replace(//g, '‘').replace(//g, '’') // '' curly singles
+    .replace(//g, '“').replace(//g, '”') // "" curly doubles
+    .replace(//g, '–').replace(//g, '—') // – em/en dashes
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/<[^>]+>/g, '')

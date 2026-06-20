@@ -48,7 +48,13 @@
   tokenStyle.textContent = tokensCss.replace(':root', ':host');
   shadow.appendChild(tokenStyle);
 
-  // ── Inject component styles ────────────────────────────────────
+  // ── Inject shared component styles ────────────────────────────
+  const sharedCss = await fetch(chrome.runtime.getURL('shared/components.css')).then((r) => r.text());
+  const sharedStyle = document.createElement('style');
+  sharedStyle.textContent = sharedCss;
+  shadow.appendChild(sharedStyle);
+
+  // ── Inject extension surface styles ───────────────────────────
   const compCss = await fetch(chrome.runtime.getURL('src/styles.css')).then((r) => r.text());
   const compStyle = document.createElement('style');
   compStyle.textContent = compCss;

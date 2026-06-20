@@ -6,5 +6,6 @@ here="$(cd "$(dirname "$0")" && pwd)"
 mkdir -p "$here/shared"
 cp "$here/../shared/parse.js" "$here/../shared/order.js" \
    "$here/../shared/ui.js" "$here/../shared/tokens.css" \
+   "$here/../shared/components.css" \
    "$here/shared/"
 echo "synced shared/ -> extension/shared/"

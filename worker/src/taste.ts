@@ -77,7 +77,7 @@ async function getProfileHtml(cookie: string): Promise<string> {
     // Redirected away from the dashboard => session no longer valid.
     throw new TasteError('Taste session expired. Please log in again.', 401);
   }
-  return res.text();
+  return new TextDecoder('windows-1252').decode(await res.arrayBuffer());
 }
 
 export async function getStudents(cookie: string): Promise<Student[]> {
@@ -107,5 +107,5 @@ export async function getCalendar(
   if (res.status === 302) {
     throw new TasteError('Taste session expired. Please log in again.', 401);
   }
-  return parseCalendar(await res.text()) as Calendar;
+  return parseCalendar(new TextDecoder('windows-1252').decode(await res.arrayBuffer())) as Calendar;
 }
