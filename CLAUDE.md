@@ -37,40 +37,87 @@ scraping) and exposes clean JSON.
 - `shared/order.js` — `assembleOrderFields(calendar, selections)`: pure logic that
   turns new-order picks into Taste `frm` field writes; new-orders-only (throws on
   already-ordered days). Tested by `shared/order.test.js`.
+- `shared/ui.js` — render functions (`renderDayCard`, `renderEmptyDayCard`,
+  `renderWeekNav`, etc.) returning HTML strings. Used by both `web/app.js` and
+  `extension/src/ui.js`. Read-only vs interactive mode set by the `readonly` flag.
+- `shared/tokens.css` — CSS custom properties (colors, radii, gaps). Imported by
+  `web/styles.css`; injected into the shadow root by `extension/src/content.js`
+  with `:root` → `:host` rewrite so vars cascade into the shadow tree.
+- `shared/components.css` — shared component styles (day cards, option items,
+  week grid, badges, topbar base, week-nav base). Imported by `web/styles.css`;
+  injected into the shadow root by `extension/src/content.js`. **Edit here, not
+  in the surface files**, to avoid drift between web and extension.
 - `worker/src/taste.ts` — Taste client (login, students, calendar). Imports the
   parser from `../../shared/parse.js`.
 - `worker/src/index.ts` — routes: `POST /api/auth/login`, `GET /api/students`,
   `GET /api/calendar?student=`.
 - `web/{index.html,app.js,styles.css,config.js}` — read-only viewer UI (phone +
-  laptop). `config.js` sets the API base URL.
+  laptop). `styles.css` imports tokens + components then adds web-only rules
+  (login card, sticky topbar, calendar-wrap). `config.js` sets the API base URL.
 - `extension/` — laptop Chrome MV3 extension (M2 ordering). `src/content.js`
-  (bootstrap: fetch raw menu → parse → mount), `src/ui.js` (shadow-DOM picker),
-  `src/checkout.js` (clear stale `_days_choices`, write picks, top-level submit to
-  Taste's payment page). Shares `shared/*.js` via `sync-shared.sh` (no bundler).
+  (bootstrap: reads page DOM, injects tokens + components + surface styles into
+  shadow root, mounts UI), `src/ui.js` (shadow-DOM week picker, interactive),
+  `src/styles.css` (surface-only: `:host`, footer bar, radio buttons, scrollable
+  content area), `src/checkout.js` (clear stale `_days_choices`, write picks,
+  hand off to Taste's payment page). Shares `shared/*.js` and `shared/*.css` via
+  `sync-shared.sh` (no bundler — run after editing anything in `shared/`).
   Manifest matches `school_menu.asp`. See `extension/README.md`.
 
-## Run locally
+## Testing
+
+### Unit tests (no browser needed)
+```bash
+cd worker && npm run test:parse   # parser checks against m0/ fixtures
+node shared/order.test.js         # order-assembly checks
+```
+Both are plain ES modules — run with plain `node`, no flags.
+
+### Run locally
 ```bash
 cd worker && npm install
 # local secret (gitignored): wrangler dev reads .dev.vars, NOT `wrangler secret put`
 printf 'APP_SECRET=%s\n' "$(openssl rand -base64 32)" > .dev.vars
 npx wrangler dev --port 8787 --local        # API at :8787
-cd ../web && python3 -m http.server 5173     # UI at :5173, sign in with Taste creds
-cd worker && npm run test:parse              # parser checks, no login needed
-node shared/order.test.js                    # order-assembly checks
+# Serve from repo root so web/styles.css can reach ../shared/tokens.css
+python3 -m http.server 5173                 # UI at http://localhost:5173/web/
 ```
-The parser + order tests are plain JS ES modules (`shared/*.test.js`), run with
-plain `node` (no `--experimental-strip-types`). To run/test the extension, see
-`extension/README.md` (and the chrome-devtools-mcp caveat in memory:
-the MCP-driven Chrome disables extensions — load Taste+ in your own Chrome).
+
+### Live browser testing via chrome-devtools-mcp
+`.mcp.json` (repo root, gitignored) uses `--autoConnect` to attach to your
+existing Chrome — Taste+ loads from your real profile, no flags needed.
+
+**Required setup — do this before starting Claude Code each session:**
+1. Open Chrome with Taste+ loaded and logged into Taste
+2. Open `chrome://inspect/#remote-debugging` and check **"Allow remote
+   debugging for this browser instance"** — confirm it says
+   "Server running at: 127.0.0.1:9222". Leave this tab open.
+3. Navigate to `school_menu.asp` in another tab
+4. Start (or restart) Claude Code
+
+**Why the order matters:** the MCP connects at Claude Code startup. If port
+9222 isn't open yet, the connection fails — it won't retry. Restart Claude Code
+after enabling remote debugging if you got the order wrong.
+
+**Chrome permission dialog:** when `--autoConnect` first connects, Chrome shows
+a permission dialog. Accept it — if you miss it the connection fails with
+"socket hang up". Check behind other windows.
+
+**Two MCP servers run simultaneously** — the installed plugin
+(`mcp__plugin_chrome-devtools-mcp_chrome-devtools__*`) always launches a blank
+Chrome and should be ignored. Use only the project server
+(`mcp__chrome-devtools-ext__*`) which uses `--autoConnect` from `.mcp.json`.
+
+Claude uses `list_pages` → `select_page` to target the existing tab.
+**Never use `navigate_page` or `new_page`** — those open new tabs in your real
+Chrome window.
 
 ## Status
-- **M0 / M1 done & verified live** (read-only viewer). **M2 ordering MECHANISM
-  done, merged & verified live** (new orders) — laptop Chrome extension
-  (`extension/`) picks days → writes Taste's order form → hands off to Taste's
-  payment page, **card-free** and money-safe. ⚠️ **But the M2 UI is a placeholder**
-  (minimal overlay list), not the approved polished calendar that *replaces*
-  Taste's page — rebuilding it is the top backlog item.
+- **M0 / M1 / M2 done & verified live.** M2 = laptop Chrome extension: full-bleed
+  shadow-DOM UI (week grid, interactive option cards, footer bar) + ordering
+  mechanism (picks days → writes Taste's order form → hands off to Taste's payment
+  page, **card-free** and money-safe). Both the web viewer and extension share
+  `shared/ui.js`, `shared/tokens.css`, and `shared/components.css` for consistent
+  rendering. Open polish items are in BACKLOG.
 - **Why the device split (don't relitigate):** SPEC §4a's cross-origin "POST the
   order from our page" can't work card-free — session cookie is `SameSite=Lax`
   (blocks the cross-site POST), the order lives in Taste's server-side session,
@@ -93,5 +140,12 @@ done; this is front-end work).
   options may be plain text, `<span>`, or bold `<strong><font>` when chosen;
   ordered days use `class="menucell2"`, available days `class="menucell"`.
 - `student_id` is an opaque numeric id (e.g. `37708`). Picker date arg format is `D-M-YYYY`.
-- The browser session can be driven for debugging via the **chrome-devtools-mcp**
-  tools (how M0 and the live M1 test were done).
+- **Taste's pages are Windows-1252**, not UTF-8. `fetch().text()` defaults to
+  UTF-8 and produces replacement chars (U+FFFD) for smart quotes etc. The worker
+  uses `new TextDecoder('windows-1252').decode(await res.arrayBuffer())`, but
+  Miniflare maps the 0x80–0x9F range as Latin-1 (C1 control chars) rather than
+  the Windows-1252 printable chars. Fix is in `stripTags` in `shared/parse.js`:
+  remaps U+0091/92/93/94/96/97 → curly quotes and dashes before tag-stripping.
+- **`shared/components.css` must be listed in `extension/manifest.json`** under
+  `web_accessible_resources`, and synced via `sync-shared.sh`, before the
+  extension can fetch it into the shadow root.
