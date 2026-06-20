@@ -11,31 +11,23 @@ Status key: `[ ]` todo · `[~]` in progress · `[x]` done
 
 ## Now / next up
 
-- [~] **M2 UI rebuild — live & mostly working; open polish items below.** The
-  full-bleed shadow-DOM extension UI was rebuilt (shared `ui.js`/`tokens.css`,
-  week-grid layout, interactive option cards, footer bar). Verified live
-  Jun 19 2026. Remaining known issues:
-  - [ ] **Verify May data is now visible** after the `outerHTML` fix (parse
-    existing page DOM instead of re-fetching; pushed 2026-06-19 but not yet
-    tested by user). Expected: ‹ nav now reaches May.
-  - [ ] **Verify week-nav default start** (Jun 22 fix) works end-to-end after
-    the outerHTML change.
-  - [ ] **Ordered-day states on extension** — confirm locked options + faded
-    siblings render correctly when navigating to an already-ordered week.
-  - [ ] **Payment hand-off smoke test** — select ≥1 new day, tap Continue;
-    confirm Taste's checkout page loads with correct total (existing M2 test).
-  - [ ] **Color / typography pass** — placeholder token values; refine
-    `shared/tokens.css` once layout is confirmed solid.
-  - [ ] **Web app parity** — `web/` side of the redesign (same shared components)
-    needs end-to-end smoke test on mobile (375 px) and desktop (1280 px).
+- [x] **M2 UI rebuild — fully verified live 2026-06-19.** Full-bleed shadow-DOM
+  extension UI (shared `ui.js`/`tokens.css`/`components.css`, week-grid layout,
+  interactive option cards, footer bar). All items verified:
+  - [x] May data visible — ‹ reaches Apr 27–May 1; disabled at boundary.
+  - [x] Week-nav default start — lands on Jun 22 (first open week).
+  - [x] Ordered-day states — ✓ ORDERED badges, faded siblings, no click handlers.
+  - [x] Payment hand-off — selected Baked Chicken Strips Jun 22, tapped Continue,
+    Taste's `school_menu_checkout.asp` loaded with Felix / $8.40 USD. Card-free. ✓
+  - [x] Web app parity — shared `components.css`; web viewer verified at 1728px.
+  - [ ] **Color / typography pass** — deferred; placeholder token values in
+    `shared/tokens.css`. Do after M3 deploy.
 
 ## Backlog (prioritized)
 
 - [ ] **Organic milk add-on (M2 fast-follow).** Optional $0.90 add-on per day.
   Needs a live look at `school_menu_choices.asp`'s `chk` field to confirm the
   milk field, then extend `assembleOrderFields` + the UI (see plan Task 7).
-- [ ] **M3 — hardening & deploy.** Caching, error/session-expiry UX, responsive
-  polish; deploy `web/` to GitHub Pages + `worker/` to Cloudflare.
 - [ ] **M4 — multi-tenant.** App-level login so other parents use their own Taste
   credentials with isolated, session-only data.
 - [ ] **Change / cancel existing orders.** Deferred from M2: changing a *paid*
@@ -53,8 +45,12 @@ Status key: `[ ]` todo · `[~]` in progress · `[x]` done
 - [x] **M0 — discovery.** Reverse-engineered Taste's contract (`m0/FINDINGS.md`).
 - [x] **M1 — read-only viewer.** Worker JSON API (login/students/calendar) + web
   UI (calendar overview + day option browser). Verified live.
-- [x] **M2 — ordering mechanism (new orders only).** Laptop Chrome extension:
-  pick days → write Taste's order form → hand off to Taste's payment page,
-  **card-free** and money-safe (clears stale selections; never re-charges existing
-  orders). Merged & verified live. **NOTE:** UI is a placeholder — see "Now / next
-  up" for the real UI rebuild.
+- [x] **M2 — ordering UI + mechanism (new orders only).** Laptop Chrome
+  extension: full-bleed shadow-DOM UI (week grid, interactive option cards,
+  footer bar) + pick days → write Taste's order form → hand off to Taste's
+  payment page, **card-free** and money-safe. All verified live 2026-06-19.
+- [x] **M3 — hardening & deploy. Verified live 2026-06-19.** Session-expiry UX
+  (friendly message on auto-logout), mobile responsive polish (375px stack
+  layout, topbar constrained), Cloudflare edge caching (5 min, per-user keyed).
+  Worker: `tastenutrition-worker.dtkahn.workers.dev`. Web:
+  `https://dtkahn.github.io/tastenutrition/web/`. Both verified live.
