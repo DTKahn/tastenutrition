@@ -6,8 +6,9 @@
 .topbar {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 0 16px; height: 52px;
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
+  background: var(--color-topbar-bg);
+  border-bottom: 1px solid rgba(255,255,255,0.1);  /* subtle light edge on dark bar */
+  color: white;
 }
 .topbar-logo { font-weight: 800; font-size: 17px; }
 .topbar-right { display: flex; align-items: center; gap: 8px; font-size: 13px; }
