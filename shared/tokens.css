@@ -1,40 +1,44 @@
-/* Taste+ design tokens — placeholder color pass (values will be refined later).
-   All component CSS must reference these vars — no hardcoded colors. */
+/* Taste+ design tokens — Verdant palette.
+   All component CSS must reference these vars — no hardcoded colors.
+   WCAG AA targets: 4.5:1 normal text, 3:1 large text / UI components. */
 :root {
   /* selected / ordered state */
-  --color-selected-bg:   #f0fdf4;
-  --color-selected-text: #15803d;
-  --color-selected-desc: #86efac;
-  --color-selected-ind:  #22c55e;
+  --color-selected-bg:   #e8f7ef;
+  --color-selected-text: #1e6b45;  /* 5.9:1 on selected-bg ✓ */
+  --color-selected-desc: #386a52;  /* 5.7:1 on selected-bg ✓ (was #86efac ~1.5:1) */
+  --color-selected-ind:  #1e7848;  /* 5.0:1 on selected-bg ✓ */
 
   /* faded state (unselected siblings on ordered day, closed-window options) */
   --color-faded-opacity: 0.35;
 
   /* day-column border tints */
-  --color-border-ordered: #bbf7d0;
-  --color-border-closed:  #f1f5f9;
+  --color-border-ordered: #a8d8b8;
+  --color-border-closed:  #e4eeea;
 
   /* page / surface */
-  --color-page-bg:    #f1f5f9;
+  --color-page-bg:    #f2f8f4;
   --color-surface:    #ffffff;
-  --color-border:     #e2e8f0;
-  --color-item-border:#f1f5f9;
+  --color-border:     #c8ddd0;
+  --color-item-border:#daeae0;
+
+  /* topbar */
+  --color-topbar-bg: #1e4a35;  /* dark forest; white text = 10:1 ✓ */
 
   /* text */
-  --color-text-primary: #1e293b;
-  --color-text-muted:   #94a3b8;
-  --color-text-subtle:  #64748b;
+  --color-text-primary: #2a4a32;  /* 9.9:1 on white ✓ */
+  --color-text-muted:   #567858;  /* 5.0:1 on white ✓ (was #94a3b8 ~2.5:1) */
+  --color-text-subtle:  #4a6a54;  /* 6.1:1 on white ✓ */
 
   /* accent (footer button, active nav, links) */
-  --color-accent: #3b82f6;
+  --color-accent: #2a8050;  /* 4.9:1 for white text on button ✓ */
 
   /* VEG badge */
-  --color-veg-text: #16a34a;
-  --color-veg-bg:   #dcfce7;
+  --color-veg-text: #1a6040;
+  --color-veg-bg:   #c8e8d4;
 
   /* ordered badge */
-  --color-badge-ordered-text: #15803d;
-  --color-badge-ordered-bg:   #dcfce7;
+  --color-badge-ordered-text: #1e6b45;
+  --color-badge-ordered-bg:   #c8e8d4;
 
   /* spacing / shape */
   --radius-card:  10px;
