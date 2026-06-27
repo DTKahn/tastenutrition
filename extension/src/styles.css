@@ -72,10 +72,10 @@
 }
 #footer-info { font-size: 13px; }
 #footer-info strong { font-size: 15px; }
-#footer-info .fee-note { font-size: 11px; color: var(--color-selected-desc); margin-left: 4px; }
+#footer-info .fee-note { font-size: 11px; color: rgba(255,255,255,0.6); margin-left: 4px; }
 #continue-btn {
   background: var(--color-selected-ind); color: white;
   border: none; border-radius: 8px;
   padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer;
 }
-#continue-btn:disabled { background: #475569; cursor: not-allowed; }
+#continue-btn:disabled { opacity: 0.4; cursor: not-allowed; }
